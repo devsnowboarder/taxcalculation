@@ -1,0 +1,22 @@
+# Scenario 1: Name            age        401k Income     SS income  Security
+              John_Doe        63         30000           40000      0
+# Scenario 2:
+              John_Doe        65         40000            40000      20000
+# Scenario 3:
+              John_Doe        66         30000            40000      0
+# Scenario 4:
+              John_Doe        66         30000            40000      20000
+# Scenario 5:
+              John_Doe        66         40000            40000      0
+# Scenario 6:
+              John_Doe        66         40000            40000      20000
+# Scenario 7:
+              John_Doe        66         40000            40000     100000
+# Scenario 8:
+              John_Doe        67         40000            40000     0
+# Scenario 9:
+              John_Doe        67         40000            40000     20000
+# Scenario 19:
+             John_Doe        67         40000            40000    100000
+
+
