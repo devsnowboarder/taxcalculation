@@ -237,7 +237,8 @@ def calculate_ca_state_tax(income_401k, stock_sales, age):
 
 
 def read_income_file(filepath, config=DEFAULT_CONFIG):
-    client_name = "Valued Client"
+    # Default client name to the input file's stem without extension
+    client_name = Path(filepath).stem.replace("_", " ").replace("-", " ").title()
     scenarios = []
     if not os.path.exists(filepath):
         print(f"Error: File '{filepath}' not found.")
@@ -250,7 +251,6 @@ def read_income_file(filepath, config=DEFAULT_CONFIG):
                 continue
             parts = line.replace(",", " ").split()
             if len(parts) >= 5:
-                client_name = parts[0].replace("_", " ")
                 try:
                     age = float(parts[1])
                     inc_401k = float(parts[2].replace("$", ""))
@@ -306,6 +306,9 @@ def generate_html(client_name, results, input_file, output_html, open_browser=Fa
         print("No valid scenarios found to generate HTML.")
         return
 
+    # Use the HTML file name (without extension) for the displayed Client badge and title
+    display_name = Path(output_html).stem.replace("_", " ").replace("-", " ").title()
+
     ss_rows, ded_rows, ca_rows, hidden_rows = "", "", "", ""
     labels, tax_values, liability_values = [], [], []
 
@@ -327,7 +330,7 @@ def generate_html(client_name, results, input_file, output_html, open_browser=Fa
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Tax Estimate for {client_name}</title>
+    <title>Tax Estimate for {display_name}</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {{ font-family: system-ui, sans-serif; background: #000000; color: #f8fafc; padding: 2rem; }}
@@ -351,7 +354,7 @@ def generate_html(client_name, results, input_file, output_html, open_browser=Fa
 <body>
     <div class="container">
         <header>
-            <div class="client-badge">Client: {client_name}</div>
+            <div class="client-badge">Client: {display_name}</div>
             <h1>Federal &amp; California State Tax Breakdown</h1>
             <p>Source file: <strong>{input_file}</strong></p>
         </header>
