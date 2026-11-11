@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os
 import sys
 import argparse
@@ -34,7 +35,6 @@ DEFAULT_CONFIG = {
 def load_tax_config(config_path=None):
     """Loads configuration from JSON file or falls back to defaults."""
     config = json.loads(json.dumps(DEFAULT_CONFIG))
-    # Ensure float('inf') remains represented correctly after json clone
     for status in ("single", "joint"):
         config["federal_brackets"][status][-1][0] = float('inf')
 
@@ -237,7 +237,8 @@ def calculate_ca_state_tax(income_401k, stock_sales, age):
 
 
 def read_income_file(filepath, config=DEFAULT_CONFIG):
-    client_name = "Valued Client"
+    # Derive client_name directly from the file name without extension
+    client_name = Path(filepath).stem.replace("_", " ").title()
     scenarios = []
     if not os.path.exists(filepath):
         print(f"Error: File '{filepath}' not found.")
@@ -250,7 +251,6 @@ def read_income_file(filepath, config=DEFAULT_CONFIG):
                 continue
             parts = line.replace(",", " ").split()
             if len(parts) >= 5:
-                client_name = parts[0].replace("_", " ")
                 try:
                     age = float(parts[1])
                     inc_401k = float(parts[2].replace("$", ""))
@@ -319,7 +319,23 @@ def generate_html(client_name, results, input_file, output_html, open_browser=Fa
         liability_values.append(round(r['total_liability'], 2))
 
         ss_rows += f"<tr><td>{i}</td><td><strong>{age_badge}</strong></td><td class=\"num\">${r['401k']:,.2f}</td><td class=\"num\">${r['stock_sales']:,.2f}</td><td class=\"num\">${r['ss']:,.2f}</td><td class=\"num\">${r['combined_income']:,.2f}</td><td class=\"num\">${r['tier1_taxable']:,.2f}</td><td class=\"num\">${r['tier2_taxable']:,.2f}</td><td class=\"num\">{cap_note}</td><td class=\"num highlight-cell\">${r['taxable_ss']:,.2f} ({r['pct_taxable']:.1f}%)</td><td class=\"num green-cell\">${r['non_taxable_ss']:,.2f}</td></tr>"
-        ded_rows += f"<tr><td>{i}</td><td><strong>{age_badge}</strong></td><td class=\"num highlight-cell\">${r['fed_agi']:,.2f}</td><td class=\"num\">${r['total_ded']:,.2f}</td><td class=\"num\">${r['fed_ordinary_taxable']:,.2f}</td><td class=\"num\">${r['fed_ordinary_tax']:,.2f}</td><td class=\"num\">${r['fed_ltcg_tax']:,.2f}</td><td class=\"num tax-cell\">${r['total_fed_tax']:,.2f}</td></tr>"
+        ded_rows += (
+            f"<tr>"
+            f"<td>{i}</td>"
+            f"<td><strong>{age_badge}</strong></td>"
+            f"<td class=\"num highlight-cell\">${r['fed_agi']:,.2f}</td>"
+            f"<td class=\"num\">${r['base_ded']:,.2f}</td>"
+            f"<td class=\"num\">${r['age_ded']:,.2f}</td>"
+            f"<td class=\"num\">${r['max_enhanced']:,.2f}</td>"
+            f"<td class=\"num\" style=\"color: #f87171;\">-${r['phaseout_reduction']:,.2f}</td>"
+            f"<td class=\"num\">${r['enhanced_ded']:,.2f}</td>"
+            f"<td class=\"num green-cell\">${r['total_ded']:,.2f}</td>"
+            f"<td class=\"num\">${r['fed_ordinary_taxable']:,.2f}</td>"
+            f"<td class=\"num\">${r['fed_ordinary_tax']:,.2f}</td>"
+            f"<td class=\"num\">${r['fed_ltcg_tax']:,.2f}</td>"
+            f"<td class=\"num tax-cell\">${r['total_fed_tax']:,.2f}</td>"
+            f"</tr>"
+        )
         ca_rows += f"<tr><td>{i}</td><td><strong>{age_badge}</strong></td><td class=\"num highlight-cell\">${r['ca_agi']:,.2f}</td><td class=\"num\">${r['ca_deduction']:,.2f}</td><td class=\"num\">${r['ca_taxable_income']:,.2f}</td><td class=\"num\">${r['ca_tax']:,.2f}</td><td class=\"num\">{r['ca_top_bracket']:.1f}%</td><td class=\"num tax-cell\">${r['total_combined_tax']:,.2f}</td></tr>"
         hidden_rows += f"<tr class=\"{irmaa_alert}\"><td>{i}</td><td><strong>{age_badge}</strong></td><td class=\"num highlight-cell\">${r['fed_agi']:,.2f}</td><td class=\"num\">${r['stock_sales']:,.2f}</td><td class=\"num\">${r['niit_tax']:,.2f}</td><td class=\"num\">Tier {r['irmaa_tier']}</td><td class=\"num\">${r['part_b_surcharge']:,.2f}</td><td class=\"num\">${r['part_d_surcharge']:,.2f}</td><td class=\"num tax-cell\">${r['total_annual_irmaa']:,.2f}</td><td class=\"num\">{r['combined_effective_rate']:.2f}%</td></tr>"
 
@@ -368,7 +384,7 @@ def generate_html(client_name, results, input_file, output_html, open_browser=Fa
 
         <h2>2. Federal Tax Deductions &amp; Federal Tax</h2>
         <table>
-            <thead><tr><th>#</th><th>Scenario</th><th class="num">Fed AGI</th><th class="num">Total Ded</th><th class="num">Ord Taxable</th><th class="num">Ord Tax</th><th class="num">LTCG Tax</th><th class="num">Total Fed Tax (w/ NIIT)</th></tr></thead>
+            <thead><tr><th>#</th><th>Scenario</th><th class="num">Fed AGI</th><th class="num">Base Ded</th><th class="num">Age 65+</th><th class="num">Max Enh.</th><th class="num">Phaseout (-6%)</th><th class="num">Net Enh.</th><th class="num">Total Ded</th><th class="num">Ord Taxable</th><th class="num">Ord Tax</th><th class="num">LTCG Tax</th><th class="num">Total Fed Tax (w/ NIIT)</th></tr></thead>
             <tbody>{ded_rows}</tbody>
         </table>
 
